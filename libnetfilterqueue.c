@@ -3,6 +3,8 @@
 
 #include <string.h>
 #include <sys/time.h>
+
+#include <linux/netfilter.h>
 #include <libnetfilter_queue/libnetfilter_queue.h>
 
 // START: NetfilterQueueData
@@ -106,7 +108,7 @@ static PyObject* NetfilterQueueData_set_verdict (NetfilterQueueData* self, PyTup
     static char* kwlist[] = {"verdict", "mark", NULL};
     PyObject* verdict;
     PyObject* mark = Py_None;
-    if (!PyArg_ParseTupleAndKeywords((PyObject*) args, (PyObject*) kwargs, "N|N", kwlist, &verdict, &mark)) {
+    if (!PyArg_ParseTupleAndKeywords((PyObject*) args, (PyObject*) kwargs, "O|O", kwlist, &verdict, &mark)) {
         PyErr_SetString(PyExc_ValueError, "Parameters must be (uint32_t verdict, uint32_t mask)");
         return NULL;
     }
@@ -251,7 +253,7 @@ static int NetfilterQueueQueueHandle_callback (struct nfq_q_handle *qh, struct n
                 Py_DECREF(data_object->mark);
                 data_object->mark = NULL;
 
-                nfq_set_verdict_mark(self->queue, packet_id, verdict, mark, 0, NULL);
+                nfq_set_verdict2(self->queue, packet_id, verdict, mark, 0, NULL);
                 Py_DECREF(data_object);
                 return 0;
             }
@@ -433,7 +435,7 @@ static PyObject* NetfilterQueueHandle_create_queue (NetfilterQueueHandle* self, 
     struct nfq_q_handle* queue_struct;
     uint16_t num;
     PyObject* callback;
-    if (!PyArg_ParseTuple((PyObject*) args, "HN", &num, &callback)) {
+    if (!PyArg_ParseTuple((PyObject*) args, "HO", &num, &callback)) {
         PyErr_SetString(PyExc_ValueError, "Parameters must be (uint16_t num, function callback)");
         return NULL;
     }
