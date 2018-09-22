@@ -35,7 +35,9 @@ static void NetfilterQueueData_dealloc (NetfilterQueueData* self) {
 
 static PyObject* NetfilterQueueData_get_packet_hw (NetfilterQueueData* self) {
     struct nfqnl_msg_packet_hw* msg_packet_hw = nfq_get_packet_hw(self->data);
-    return PyString_FromStringAndSize((char*) msg_packet_hw->hw_addr, 8);
+    if (msg_packet_hw)
+        return PyString_FromStringAndSize((char*) msg_packet_hw->hw_addr, 8);
+    Py_RETURN_NONE;
 }
 
 static PyObject* NetfilterQueueData_get_nfmark (NetfilterQueueData* self) {
