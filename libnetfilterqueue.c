@@ -239,7 +239,7 @@ static int NetfilterQueueQueueHandle_callback (struct nfq_q_handle *qh, struct n
 
         data_object->data = nfa;
         args = PyTuple_Pack(1, data_object);
-        PyObject_CallObject(self->callback, args);
+        Py_DECREF(PyObject_CallObject(self->callback, args));
         Py_DECREF(args);
 
         if (data_object->verdict) {
