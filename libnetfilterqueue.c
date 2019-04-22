@@ -225,6 +225,7 @@ static int NetfilterQueueQueueHandle_callback (struct nfq_q_handle *qh, struct n
     PyObject* args;
     NetfilterQueueQueueHandle* self;
     NetfilterQueueData* data_object;
+    PyObject* result_object;
     struct nfqnl_msg_packet_hdr* packet_header;
     uint32_t packet_id;
     uint32_t verdict;
@@ -238,8 +239,9 @@ static int NetfilterQueueQueueHandle_callback (struct nfq_q_handle *qh, struct n
         Py_DECREF(args);
 
         data_object->data = nfa;
+
         args = PyTuple_Pack(1, data_object);
-        Py_DECREF(PyObject_CallObject(self->callback, args));
+        result_object = PyObject_CallObject(self->callback, args);
         Py_DECREF(args);
 
         if (data_object->verdict) {
@@ -257,14 +259,35 @@ static int NetfilterQueueQueueHandle_callback (struct nfq_q_handle *qh, struct n
 
                 nfq_set_verdict2(self->queue, packet_id, verdict, mark, 0, NULL);
                 Py_DECREF(data_object);
+
+                if (PyErr_Occurred()) {
+                    PyErr_PrintEx(1);
+                    return -1;
+                }
+
+                Py_DECREF(result_object);
                 return 0;
             }
 
             nfq_set_verdict(self->queue, packet_id, verdict, 0, NULL);
             Py_DECREF(data_object);
+
+            if (PyErr_Occurred()) {
+                PyErr_PrintEx(1);
+                return -1;
+            }
+
+            Py_DECREF(result_object);
             return 0;
         }
         Py_DECREF(data_object);
+
+        if (PyErr_Occurred()) {
+            PyErr_PrintEx(1);
+            return -1;
+        }
+
+        Py_DECREF(result_object);
         return 0;
     }
     return 0;
