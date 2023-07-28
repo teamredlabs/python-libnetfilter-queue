@@ -3,6 +3,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+
+#include <sys/socket.h>
 #include <sys/time.h>
 
 #include <linux/netfilter.h>
@@ -78,13 +80,19 @@ static PyObject* NetfilterQueueData_get_physoutdev (NetfilterQueueData* self) {
     return PyInt_FromLong((long) nfq_get_physoutdev(self->data));
 }
 
-static PyObject* NetfilterQueueData_get_payload (NetfilterQueueData* self) {
-    int length;
-    char* data;
+static PyObject* NetfilterQueueData_get_payload (NetfilterQueueData* self, PyTupleObject* args) {
+    uint32_t snaplen; int length; char* data;
+    if (!PyArg_ParseTuple((PyObject*) args, "I", &snaplen)) {
+        PyErr_SetString(PyExc_ValueError, "Parameters must be (uint32_t snaplen)");
+        return NULL;
+    }
     length = nfq_get_payload(self->data, &data);
     if (length < 0) {
         PyErr_SetString(PyExc_OSError, "Call to nfq_get_payload failed");
         return NULL;
+    }
+    if (0 < snaplen && snaplen < length) {
+        return PyString_FromStringAndSize(data, snaplen);
     }
     return PyString_FromStringAndSize(data, length);
 }
@@ -109,8 +117,7 @@ static PyObject* NetfilterQueueData_get_gid (NetfilterQueueData* self) {
 
 static PyObject* NetfilterQueueData_set_verdict (NetfilterQueueData* self, PyTupleObject* args, PyDictObject* kwargs) {
     static char* kwlist[] = {"verdict", "mark", NULL};
-    PyObject* verdict;
-    PyObject* mark = Py_None;
+    PyObject* verdict; PyObject* mark = Py_None;
     if (!PyArg_ParseTupleAndKeywords((PyObject*) args, (PyObject*) kwargs, "O|O", kwlist, &verdict, &mark)) {
         PyErr_SetString(PyExc_ValueError, "Parameters must be (uint32_t verdict, uint32_t mask)");
         return NULL;
@@ -148,7 +155,7 @@ static PyMethodDef NetfilterQueueData_methods[] = {
     {"get_physindev", (PyCFunction) NetfilterQueueData_get_physindev, METH_NOARGS, NULL},
     {"get_outdev", (PyCFunction) NetfilterQueueData_get_outdev, METH_NOARGS, NULL},
     {"get_physoutdev", (PyCFunction) NetfilterQueueData_get_physoutdev, METH_NOARGS, NULL},
-    {"get_payload", (PyCFunction) NetfilterQueueData_get_payload, METH_NOARGS, NULL},
+    {"get_payload", (PyCFunction) NetfilterQueueData_get_payload, METH_VARARGS, NULL},
     {"get_uid", (PyCFunction) NetfilterQueueData_get_uid, METH_NOARGS, NULL},
     {"get_gid", (PyCFunction) NetfilterQueueData_get_gid, METH_NOARGS, NULL},
     {"set_verdict", (PyCFunction) NetfilterQueueData_set_verdict, METH_VARARGS | METH_KEYWORDS, NULL},
