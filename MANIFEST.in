@@ -1,0 +1,4 @@
+include libnetfilterqueue.pyi
+include libnetfilterqueue-stubs/__init__.py
+include README.md
+include LICENSE
