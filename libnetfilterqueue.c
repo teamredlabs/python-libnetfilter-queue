@@ -12,8 +12,8 @@
 typedef struct {
     PyObject_HEAD
     struct nfq_data* data;
-    PyIntObject* verdict;
-    PyIntObject* mark;
+    PyObject* verdict;
+    PyObject* mark;
 } NetfilterQueueData;
 
 static PyObject* NetfilterQueueData_new (PyTypeObject* type, PyTupleObject* args) {
